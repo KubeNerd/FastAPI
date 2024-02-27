@@ -1,0 +1,1 @@
+docker run --name fastidb -e POSTGRES_PASSWORD=admindb -d -p 5432:5432 postgres
