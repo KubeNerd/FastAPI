@@ -1,10 +1,10 @@
 from fastapi import APIRouter, HTTPException, status
 
-healthcheck = APIRouter()
+router = APIRouter()
 
-@healthcheck.get('/healthcheck')
+@router.get('/')
 
-async def main():
+def get_healthcheck():
     try:
         return { "status":"ok" } 
     

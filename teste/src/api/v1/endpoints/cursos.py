@@ -1,6 +1,7 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, status
 
-users_route = APIRouter()
+
+router = APIRouter()
 
 cursos = {1: {"titulo": "Programação para leitos", "aulas": 112, "horas": 58}, 2: {
     "titulo": "Algoritimos e logica de programação", "aulas": 87, "horas": 67}, 3:{
@@ -8,7 +9,6 @@ cursos = {1: {"titulo": "Programação para leitos", "aulas": 112, "horas": 58},
     }}
 
 
-@users_route.get('/users')
-
-async def main():
+@router.get('/', status_code=status.HTTP_200_OK)
+def get_cursos():
     return cursos
