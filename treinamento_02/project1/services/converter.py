@@ -5,19 +5,20 @@
 
 import requests
 import os
-from fastapi import HTTPException
+from fastapi import HTTPException, Path
+import aiohttp
+
+ALPHAVANTAGE_APIKEY = os.getenv("ALPHAVANTAGE_APIKEY")
 
 
 def sync_converter(from_currency: str, to_currency: str, price: float):
 
-    ALPHAVANTAGE_APIKEY = os.getenv("ALPHAVANTAGE_APIKEY")
-
     if not ALPHAVANTAGE_APIKEY:
         raise Exception("ALPHAVANTAGE_APIKEY are not provided")
-    url = f'https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&{from_currency}=USD&{to_currency}=JPY&apikey=={ALPHAVANTAGE_APIKEY}'
     
+    url = f'https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency={from_currency}&to_currency={to_currency}&apikey={ALPHAVANTAGE_APIKEY}'
     try:
-        response = requests.get(url=url)
+        response = requests.get(url=url, verify=False)
     except Exception as error:
         raise HTTPException(status_code=400, detail=error)
 
@@ -29,3 +30,35 @@ def sync_converter(from_currency: str, to_currency: str, price: float):
     exchange_rate = float(data["Realtime Currency Exchange Rate"]["5. Exchange Rate"])
 
     return price * exchange_rate
+
+async def async_converter(from_currency: str, to_currency: str, price: float):
+    if not ALPHAVANTAGE_APIKEY:
+        raise Exception("ALPHAVANTAGE_APIKEY not provided")
+
+    url = (
+        f'https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE'
+        f'&from_currency={from_currency}&to_currency={to_currency}&apikey={ALPHAVANTAGE_APIKEY}'
+    )
+
+    try:
+        timeout = aiohttp.ClientTimeout(total=10)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.get(url) as response:
+                data = await response.json()
+    except aiohttp.ClientError as error:
+        raise HTTPException(status_code=502, detail=str(error))
+
+    if "Note" in data:
+        raise HTTPException(status_code=429, detail=data["Note"])
+
+    if "Realtime Currency Exchange Rate" not in data:
+        raise HTTPException(status_code=400, detail="Realtime Currency Exchange Rate not present in response")
+
+    exchange_rate = float(data["Realtime Currency Exchange Rate"]["5. Exchange Rate"])
+    return {
+        "from_currency": from_currency,
+        "to_currency": to_currency,
+        "price": price,
+        "exchange_rate": exchange_rate,
+        "converted_price": price * exchange_rate
+    }
