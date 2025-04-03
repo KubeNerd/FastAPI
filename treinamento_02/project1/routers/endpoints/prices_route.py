@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Path, Query
 from services.converter import sync_converter, async_converter
 from asyncio import gather
-from schema import ConverterInput
+from schema import ConverterInput, ConverterOutput
 
 prices_route: APIRouter = APIRouter(prefix="/converter")
 
@@ -9,8 +9,7 @@ prices_route: APIRouter = APIRouter(prefix="/converter")
 def converter(from_currency: str, to_currencies: str, price: float):
     
     to_currencies = to_currencies.split(",")
-
-
+    
     result = []
 
     for currency in to_currencies:
@@ -56,4 +55,9 @@ async def convert_prices_async(
     to_currencies = body.to_currencies
     price = body.price
     
-    return await gather(*tasks)
+    result = await gather(*tasks)
+
+    return ConverterOutput(
+        message="sucess",
+        data=result
+    )

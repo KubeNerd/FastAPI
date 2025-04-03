@@ -21,3 +21,8 @@ class ConverterInput(BaseModel):
                 raise ValueError("Moeda inválida")
 
         return value
+    
+
+class ConverterOutput(BaseModel):
+    message: str
+    data: List[dict]
